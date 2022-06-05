@@ -1,0 +1,80 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+ 
+<script src="https://maps.google.com/maps/api/js?sensor=true" type="text/javascript"></script>
+ 
+<style>
+.stationInfo {
+    height: 150px;    
+    width: 250px;
+}
+</style>
+ 
+<div id="canvas" style="height: 600px; width:600px;"></div>
+ 
+<!--Устанавливаем секцию scripts, которая затем будет рендериться на мастер-странице -->
+@section scripts {
+    <script type="text/javascript">
+ 
+    $(document).ready(function () {
+        GetMap();
+    });
+ 
+    // Функция загрузки
+    function GetMap(callback) {
+ 
+        google.maps.visualRefresh = true;
+        // установка основных координат
+        let Abakan = new google.maps.LatLng(53.71667, 91.41667);
+ 
+        // Установка общих параметров отображения карты, как масштаб, центральная точка и тип карты
+        let mapOptions = {
+            zoom: 15,
+            center: Abakan,
+            mapTypeId: google.maps.MapTypeId.G_NORMAL_MAP
+        };
+ 
+        // Встраиваем гугл-карты в элемент на странице и получаем объект карты
+        let map = new google.maps.Map(document.getElementById("canvas"), mapOptions);
+ 
+        // Настраиваем красный маркер, который будет использоваться для центральной точки
+        let marker = new google.maps.Marker({
+            position: Abakan,
+            map: map,
+            title: 'Абакан'
+        });
+        
+        // Берем для маркера иконку с сайта google
+        marker.setIcon('https://maps.google.com/mapfiles/ms/icons/red-dot.png')
+ 
+        // Получаем данные
+        $.getJSON('@Url.Action("GetData", "Home")', function (data) {
+            console.log(data);
+            // Проходим по всем данным и устанавливаем для них маркеры
+            $.each(data, function (i, item) {
+                let position = new google.maps.LatLng(item.coords.lat, item.coords.lon);
+                let marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: item.name
+                });
+ 
+                // Берем для этих маркеров синие иконки с сайта google
+                marker.setIcon('https://maps.google.com/mapfiles/ms/icons/blue-dot.png')
+ 
+                // Для каждого объекта добавляем доп. информацию, выводимую в отдельном окне
+                let infowindow = new google.maps.InfoWindow({
+                    content: "<div class='stationInfo'><h2> Регион: " + item.subject +"</h2>" + "<h2>Округ: " + item.district + "</h2><div><h4>Город: "
+                        + item.name + "</h4></div><div><h4>Население: " + item.population + " млн. человек</h4></div></div>"
+                });
+ 
+                // обработчик нажатия на маркер объекта
+                marker.addListener('click', function () {
+                    infowindow.open(map, marker);
+                });
+            })
+        });
+    }
+</script>
+}
